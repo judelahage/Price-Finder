@@ -109,8 +109,13 @@ def getResults():
         })
     
     return jsonify(productResults)
-        
 
-        
-        
+@app.route('/startScraper', methods=['POST']) #starts web scraper based on the url
+def startScraper():
+    url = request.json.get('url')
+    searchText = request.json.get('searchText')
     
+    command = f"python ./scraper/init.py {url} \"{searchText}\" /results"
+    subprocess.Popen(command, shell=True)
+    
+    return jsonify({'message': 'Scraper started successfully'}), 200

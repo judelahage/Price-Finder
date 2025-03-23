@@ -17,45 +17,100 @@ class ProductResult(db.Model):
     img = db.Column(db.String(1000))
     url = db.Column(db.String(1000))
     price = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    search_text = db.Column(db.String(255))
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+    searchText = db.Column(db.String(255))
     source = db.Column(db.String(255))
     
-    def init(self, name, img, url, price, search_text, source):
+    def init(self, name, img, url, price, searchText, source):
         self.name = name
         self.url = url
         self.img = img
         self.price = price
-        self.search_text = search_text
+        self.searchText = searchText
         self.source = source
 
 class TrackedProducts(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(1000))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     tracked = db.Column(db.Boolean, default = True)
     
     def init(self, name, tracked = True):
         self.name = name
         self.tracked = tracked
 
-#send post request to results
+#send post request to results, submits results, then gets added to database
 @app.route('/results', methods=['POST'])
 def submitResults():
     results = request.json.get('data')
-    search_text = request.json.get('search_text')
+    searchText = request.json.get('searchText')
     source = request.json.get('source')
 
     for result in results:
-        product_result = ProductResult(
-            name = result['name']
-            url = result['url']
-            img = result['img']
-            price = result['price']
-            search_text = search_text
-            source = source
-        )
-        db.session.add(product_result)
+        productResult = ProductResult(
+            name = result['name'],
+            url = result['url'],
+            img = result['img'],
+            price = result['price'],
+            searchText = searchText,
+            source = source)
+        
+        db.session.add(productResult)
         
     db.session.commit()
     return jsonify({'message': 'Received Data Successfully'}), 200
+
+
+@app.route('/uniqueSearchTexts', methods=['GET']) #gives all the unique searches for product names
+def getUniqueSearchTexts():
+    uniqueSearchTexts = db.session.query(ProductResult.search_text).distinct().all()
+    uniqueSearchTexts = [text[0] for text in uniqueSearchTexts]
+    return jsonify(uniqueSearchTexts)
+
+
+@app.route('/results') #gets all the results for a specific product name
+def getProductResults():
+    searchText = request.args.get('searchText')
+    results = ProductResult.query.filter_by(searchText = searchText).order_by(ProductResult.createdAt.desc()).all()
+    
+    productDict = {}
+    for result in results:
+        url = result.url
+        if url not in productDict:
+            productDict[url] = {
+                'name' : result.name,
+                'url' : result.url,
+                'img' : result.img,
+                'source' : result.source,
+                'createdAt' : result.createdAt,
+                'priceHistory': []
+            }
+            
+        productDict[url]['priceHistory'].append({
+            'price' : result.price,
+            'date' : result.createdAt
+        })
+        
+    return jsonify(list(productDict.values()))
+
+@app.route('/allResults', methods=['GET']) #gets all results for all products in our database
+def getResults():
+    results = ProductResult.query.all()
+    productResults = []
+    for result in results:
+        productResults.append({
+            'name' : result.name,
+            'url' : result.url,
+            'img' : result.img,
+            'date' : result.date
+            'source' : result.source,
+            'createdAt' : result.createdAt,
+            'searchText': result.searchText
+        })
+    
+    return jsonify(productResults)
+        
+
+        
+        
+    

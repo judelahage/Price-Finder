@@ -140,6 +140,40 @@ def toggleTrackedProduct(productId):
     
     return jsonify({'message': 'Tracked product tracked successfully'}), 200
 
+@app.route('/tracked-products', methods = ['GET']) #allows us to get all our tracked products
+def getTrackedProducts():
+    trackedProducts = TrackedProducts.query.all()
+    results = []
+    for product in trackedProducts:
+        results.append({
+            'id': product.id,
+            'name': product.name,
+            'created-at': product.createdAt,
+            'tracked': product.tracked
+        })
+    return jsonify(results), 200
 
+@app.route("/update-tracked-products", methods=["POST"]) #runs script to search internet for updated information
+def updateTrackedProducts():
+    trackedProducts = TrackedProducts.query.all()
+    url = "https://amazon.com"
+    
+    productNames = []
+    for trackedProduct in trackedProducts:
+        name = trackedProduct.name
+        if not trackedProduct.tracked:
+            continue
+        
+        cmd = f"python ./scraper/init.py {url} \"{name}\" /results"
+        subprocess.Popen(cmd, shell=True)
+        productNames.append(name)
+        
+        return jsonify({'message': 'Scrapers started successfully', "products": productNames}), 200
+    
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run()
+    
     
     

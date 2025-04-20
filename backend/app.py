@@ -119,3 +119,27 @@ def startScraper():
     subprocess.Popen(command, shell=True)
     
     return jsonify({'message': 'Scraper started successfully'}), 200
+
+@app.route('-add-tracked-product', methods = ['POST']) #adds tracked product
+def add_tracked_product():
+    name = request.json.get('name')
+    trackedProduct = TrackedProducts(name = name);
+    db.session.add(trackedProduct);
+    db.session.commit()
+    
+    return jsonify({'message': 'Tracked product added successfully'}), 200
+
+@app.route('/tracked-product/<int:product_id>', methods = ['PUT']) #toggling tracking and untracking
+def toggleTrackedProduct(productId):
+    trackedProduct = TrackedProducts.query.get(productId)
+    if trackedProduct is None:
+        return jsonify({'message': 'Tracked product not found'}), 404
+    
+    trackedProduct.tracked = not trackedProduct.tracked
+    db.session.commit()
+    
+    return jsonify({'message': 'Tracked product tracked successfully'}), 200
+
+
+    
+    

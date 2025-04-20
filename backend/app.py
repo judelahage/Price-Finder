@@ -102,6 +102,7 @@ def getResults():
             'name' : result.name,
             'url' : result.url,
             'img' : result.img,
+            'price' : result.price,
             'date' : result.date
             'source' : result.source,
             'createdAt' : result.createdAt,
@@ -120,7 +121,7 @@ def startScraper():
     
     return jsonify({'message': 'Scraper started successfully'}), 200
 
-@app.route('-add-tracked-product', methods = ['POST']) #adds tracked product
+@app.route('-addTrackedProduct', methods = ['POST']) #adds tracked product
 def add_tracked_product():
     name = request.json.get('name')
     trackedProduct = TrackedProducts(name = name);
@@ -129,7 +130,7 @@ def add_tracked_product():
     
     return jsonify({'message': 'Tracked product added successfully'}), 200
 
-@app.route('/tracked-product/<int:product_id>', methods = ['PUT']) #toggling tracking and untracking
+@app.route('/trackedProduct/<int:productId>', methods = ['PUT']) #toggling tracking and untracking
 def toggleTrackedProduct(productId):
     trackedProduct = TrackedProducts.query.get(productId)
     if trackedProduct is None:
@@ -140,7 +141,7 @@ def toggleTrackedProduct(productId):
     
     return jsonify({'message': 'Tracked product tracked successfully'}), 200
 
-@app.route('/tracked-products', methods = ['GET']) #allows us to get all our tracked products
+@app.route('/trackedProducts', methods = ['GET']) #allows us to get all our tracked products
 def getTrackedProducts():
     trackedProducts = TrackedProducts.query.all()
     results = []
@@ -153,7 +154,7 @@ def getTrackedProducts():
         })
     return jsonify(results), 200
 
-@app.route("/update-tracked-products", methods=["POST"]) #runs script to search internet for updated information
+@app.route("/updateTrackedProducts", methods=["POST"]) #runs script to search internet for updated information
 def updateTrackedProducts():
     trackedProducts = TrackedProducts.query.all()
     url = "https://amazon.com"

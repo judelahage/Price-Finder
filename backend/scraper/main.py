@@ -43,3 +43,41 @@ async def search(metadata, page, searchText): #filling input field
     await page.wait_for_load_state()
     return page
 
+async def getProducts(page, searchText, selector, getProduct): #retrieves products based on search query
+    print("Retreiving products.")
+    productDivs = await page.query_selector_all(selector)
+    validProducts = []
+    words = searchText.split(" ")
+    
+    async with asyncio.TaskGroup() as tg:
+        for div in productDivs:
+            async def task(pDiv):
+                product = await getProduct(pDiv)
+                if not product["price"] or not product["url"]:
+                    return
+                
+                for word in words:
+                    if not product["name"] or word.lower() not in product["name"].lower():
+                        break;
+                    
+                else:
+                    validProducts.append(product)
+                
+            tg.create_task(task(div))
+        
+    return validProducts
+
+def saveResults(results): #saves search results
+    data = {"restuls": results}
+    FILE = os.path.join("Scraper", "results.json")
+    with open(FILE, "w") as f:
+        json.dump(data, f)
+            
+def postResults(results, endpoint, searchText, source): #posts results to backend so they get saved to database
+    headers = {
+        "Content-Type": "application/json"
+    }
+    data = {"data": results, "searchText": searchText, "source": source}
+    print("Sending request to", endpoint)
+    response  = post("http://localhost:5000" + endpoint, headers = headers, json = data)
+    print("Status code: ", response.status_code)

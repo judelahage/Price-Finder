@@ -81,3 +81,34 @@ def postResults(results, endpoint, searchText, source): #posts results to backen
     print("Sending request to", endpoint)
     response  = post("http://localhost:5000" + endpoint, headers = headers, json = data)
     print("Status code: ", response.status_code)
+
+async def main(url, searchText, responseRoute): #connecting to browser, accessing amazon and getting information from it
+    metadata = URLS.get(url)
+    if not metadata:
+        print("Invalid URL.")
+        return
+    
+    async with async_playwright() as pw:
+        print('Connecting to browser.')
+        browser = await pw.chromium.connect_over_cdp(browserUrl)
+        page = await browser.new_page()
+        print("Connected")
+        await page.goto(url, timeout = 120000)
+        print("Loaded intial page.")
+        searchPage = await search(metadata, page, searchText)
+        
+        def func(x): return None
+        if url == AMAZON:
+            func = getAmazonProduct
+        else:
+            raise Exception('Invalid URL')
+        
+        results = await getProducts(searchPage, searchText, metadata["productSelector"], func)
+        print("Saving results.")
+        postResults(results, responseRoute, searchText, url)
+        
+        await browser.close()
+
+if __name__ == "__main__":
+    #testing
+    asyncio.run(main(AMAZON, "ryzen 9 7950x 3d"))

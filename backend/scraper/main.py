@@ -82,7 +82,7 @@ def postResults(results, endpoint, searchText, source): #posts results to backen
     response  = post("http://localhost:5000" + endpoint, headers = headers, json = data)
     print("Status code: ", response.status_code)
 
-async def main(url, searchText, responseRoute): #connecting to browser, accessing amazon and getting information from it
+async def main(url, searchText, responseRoute): #connecting to browser, accessing amazon
     metadata = URLS.get(url)
     if not metadata:
         print("Invalid URL.")
